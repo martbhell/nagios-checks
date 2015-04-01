@@ -91,7 +91,7 @@ safety() {
 	fi
 }
 
-freespace() {
+perfdataf() {
 	which ilsresc >/dev/null 2>&1
 	if [ "$?" != 0 ]; then
 		echo "UNKNOWN: Could not find ilsresc in \$PATH"
@@ -108,6 +108,11 @@ freespace() {
 		perfdata="$perfdata $res$_free_space=$FREESPACE"
 		fi
 	done
+
+	# Number of users/groups:
+	users=$(iquest "%s" "select count(USER_ID) where USER_TYPE <> 'rodsgroup'")
+	groups=$(iquest "%s" "select count(USER_NAME) where USER_TYPE = 'rodsgroup'")
+	perfdata="$perfdata users=$users groups=$groups"
 	echo $perfdata|sed -e 's/^,//'
 }
 
@@ -180,7 +185,7 @@ fi
 
 safety
 
-PERFDATA="$(freespace)"
+PERFDATA="$(perfdataf)"
 
 writeafile
 writestatus="$?"
