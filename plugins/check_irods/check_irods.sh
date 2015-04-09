@@ -28,7 +28,7 @@
 # Irods updates the available free space once a day.
 ##
 
-VERSION="0.1"
+VERSION="0.2"
 
 ### Settings
 # Nagios return codes
@@ -58,6 +58,7 @@ DEBUG=0
 iput="iput"
 iget="iget"
 irm="irm"
+irmtrash="irmtrash"
 ils="ils"
 rm="rm"
 
@@ -65,6 +66,7 @@ if [ "$DEBUG" != 0 ]; then
 iput="iput -v"
 iget="iget -v"
 irm="irm -v"
+irmtrash="irmtrash -v"
 ils="ils -v"
 rm="rm -v"
 fi
@@ -173,8 +175,22 @@ removeafile() {
 	"$irm" "$FILENAMEONIRODS"
 	IRMSTATUS="$?"
 	"$rm" "$TEMPFILE"
+	return "$IRMSTATUS"
+}
+
+removetrash() {
+
+        which irmtrash >/dev/null 2>&1
+        if [ "$?" != 0 ]; then
+                echo "UNKNOWN: Could not find irmtrash in \$PATH"
+                exit $UNKNOWN
+        fi
+	
+	"$irmtrash"
+	IRMTSTATUS="$?"
 	return "$?"
 }
+
 
 ### Execution
 
@@ -195,14 +211,16 @@ getafile
 getstatus="$?"
 removeafile
 removestatus="$?"
+removetrash
+removetrashstatus="$?"
 
 ### Checking the returns of the functions
 
-if [ "$writestatus" != 0 ] || [ "$getstatus" != 0 ] || [ "$removestatus" != 0 ]; then
-	echo "CRITICAL: writestatus = $writestatus, getstatus = $getstatus, removestatus = $removestatus | $PERFDATA"
+if [ "$writestatus" != 0 ] || [ "$getstatus" != 0 ] || [ "$removestatus" != 0 ] || [ "$removetrashstatus" != 0 ]; then
+	echo "CRITICAL: writestatus = $writestatus, getstatus = $getstatus, removestatus = $removestatus, removetrashstatus = $removetrashstatus | $PERFDATA"
 	exit $WARNING
-elif [ "$writestatus" == 0 ] || [ "$getstatus" == 0 ] || [ "$removestatus" == 0 ]; then
-	echo "OK: writestatus = $writestatus, getstatus = $getstatus, removestatus = $removestatus | $PERFDATA"
+elif [ "$writestatus" == 0 ] || [ "$getstatus" == 0 ] || [ "$removestatus" == 0 ] || [ "$removetrashstatus" == 0 ]; then
+	echo "OK: writestatus = $writestatus, getstatus = $getstatus, removestatus = $removestatus, removetrashstatus = $removetrashstatus | $PERFDATA"
 	exit $OK
 
 fi
